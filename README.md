@@ -105,7 +105,7 @@ flowchart LR
 | Aşama | Durum |
 |---|---|
 | Proje tanımı | ✅ Tamamlandı |
-| Veri seti seçimi (Loghub) | ⬜ Sırada |
+| Veri seti seçimi (Loghub) | ✅ Tamamlandı |
 | Log parsing | ⬜ |
 | Embedding | ⬜ |
 | Kümeleme | ⬜ |
