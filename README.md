@@ -106,7 +106,7 @@ flowchart LR
 |---|---|
 | Proje tanımı | ✅ Tamamlandı |
 | Veri seti seçimi (Loghub) | ✅ Tamamlandı |
-| Log parsing | ⬜ |
+| Log parsing | ✅ Tamamlandı |
 | Embedding | ⬜ |
 | Kümeleme | ⬜ |
 | LLM ile kök neden analizi | ⬜ |
