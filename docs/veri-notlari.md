@@ -59,7 +59,7 @@ Regex ile 2.000 satırın 2.000'i parse edildi, eşleşmeyen satır yok.
 - Drain3 kaç template çıkaracak, 114'e ne kadar yaklaşacak?
 - Hangi gerçek template'ler bölünecek, hangileri birleşecek?
 - ERROR/WARN template'leri (özellikle nadir olanlar) iyi çıkacak mı?
-## Gün 3: Parsing sonuçları
+## Parsing sonuçları
 
 Drain3 (`sim_th=0.4`, depth=4, özel maskeler: ID, blok ID, IP, süre, sayı):
 
