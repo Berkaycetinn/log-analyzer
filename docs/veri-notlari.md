@@ -95,3 +95,16 @@ Hem fırtına hem istisna aynı host:port'u (`msra-sa-41:9000`) anıyor. Hipotez
 
 LLM'e iki bölüm verilecek: (1) boyuta göre büyük kümeler, (2) "önemli" bayrağıyla seçilmiş nadir olaylar. Zaman sırası bağlam olarak verilecek, "ilk görülen = kök neden" varsayımı yapılmayacak.
 
+### Doğrulama
+
+Önemli satır: 1.121 / 2.000 (%56). Önemli template: 17 / 99. Vektör: (99, 768).
+
+**Örnek 18:10:55,202'de kesiliyor.** Fırtına mesajları hâlâ sürerken veri bitiyor. Sorunun ne zaman bittiği bilinmiyor, "sorun çözüldü" yorumu yapılmayacak.
+
+**Lease sayacı:** `Failed to renew lease ... for N seconds` mesajı 18:05:27'de 30, 18:10:54'te 356 gösteriyor (zaman farkı 327 sn, sayaç farkı 326). Bağlantı sorunu muhtemelen ~18:04:57'de başlamış. Bu bilgi `<NUM>` maskesinin içinde kayboluyor.
+
+### 04 kararları
+
+1. Olay grubu = embedding kümesi + zaman penceresi örtüşmesi.
+2. Maskelenen değerler (min, maks, örnek) template'le birlikte saklanacak ve LLM'e verilecek.
+3. LLM'e "veri örneği şu saatte bitiyor, sonrası bilinmiyor" bilgisi açıkça verilecek.
