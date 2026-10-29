@@ -45,7 +45,8 @@ flowchart LR
     A[📄 Ham log dosyası] --> B[🧹 Parsing<br/>Drain3]
     B --> C[🔢 Embedding<br/>sentence-transformers]
     C --> D[🗂️ Kümeleme<br/>HDBSCAN]
-    D --> E[🤖 LLM analizi<br/>Claude API]
+    D --> G[⏱️ Olay grupları<br/>zaman penceresi]
+    G --> E[🤖 LLM analizi<br/>Claude API]
     E --> F[📊 Rapor]
 ```
 
@@ -108,7 +109,7 @@ flowchart LR
 | Veri seti seçimi (Loghub) | ✅ Tamamlandı |
 | Log parsing | ✅ Tamamlandı |
 | Embedding | ✅ Tamamlandı |
-| Kümeleme | ⬜ |
+| Kümeleme | ✅ Tamamlandı |
 | LLM ile kök neden analizi | ⬜ |
 | Arayüz | ⬜ |
 | Değerlendirme | ⬜ |
