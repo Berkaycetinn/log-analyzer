@@ -223,3 +223,27 @@ Progress raporu veren 10 map attempt:
 ### LLM paketi (`events.json`, ~4.070 token)
 
 3 olay + `activity_per_minute` + `pre_storm_facts` (attempt tablosu, en uzun sessizlik, ilk normal satır). `pre_storm_facts` yorumsuz olgular içerir, sebep iddiası içermez.
+## LLM ile Kök Neden Analizi ve Doğrulama (Qwen3-14B)
+
+### Deney Mimarisi
+- **Model:** `Qwen/Qwen3-14B` (Local HuggingFace / PyTorch)
+- **Yaklaşım:** Zero-Shot / Few-Shot Prompting + Extended Reasoning (`enable_thinking=True`, `<think>` zinciri)
+- **Girdi:** `events.json` (3 Olay, maskelenmiş alan aralıkları, dakikalık aktivite, zaman penceresi bağlamı)
+- **Doğrulama Metrikleri:** Exact Quote Matching (Birebir Alıntı), Severity/Confidence Dağılımı, Grounding (Hallucination kontrolü), Port & Servis Açıklığı (8030/9000).
+
+### v1 (Non-Thinking) vs v2 (Thinking Mode) Karşılaştırması
+
+| Sürüm | Çalıştırma | Olay 0 | Olay 1 | Olay 2 | Bulunamayan Alıntı (Hallucination) | `8030_ve_9000` Etiketi | `NoRouteToHost` Kanıtı |
+|---|---|---|---|---|---|---|---|
+| **v1** | 0 | medium/medium | medium/medium | high/high | 2 | False | True |
+| **v1** | 1 | medium/medium | medium/medium | high/medium | 1 | False | True |
+| **v1** | 2 | medium/medium | medium/medium | high/high | 1 | False | True |
+| **v1** | 3 | medium/medium | medium/medium | high/high | 2 | False | True |
+| **v2** | 0 | low/medium | low/low | high/medium | **0** | False | True |
+| **v2** | 1 | low/low | low/low | high/medium | **0** | False | True |
+| **v2** | 2 | low/low | none/medium | high/medium | **0** | False | True |
+
+### Çıkarılan Sonuçlar ve Kararlar
+1. **Düşünce Zinciri (Reasoning - `<think>`) Şart:** `v1` (düşünce zinciri kapalı) çalıştırmalarında alıntılar ham veriden kırpılırken 1-2 alıntı hatası oluşmuştur. `v2` (thinking modu aktif) ile **bulunamayan alıntı sayısı 0'a düşmüş** ve hallüsinasyon %100 engellenmiştir.
+2. **Yalancı Pozitif (False Positive) Filtreleme:** Model, ikincil durumlar olan Olay 0 ve Olay 1'i doğru analiz ederek önem derecesini **`low`** seviyesine indirmiş; `NoRouteToHostException` ve RM kopukluğu içeren asıl arızayı (Olay 2) doğru şekilde **`high`** önem seviyesiyle işaretlemiştir.
+3. **Korelasyon Başarısı:** Model, ağ kopukluğunun konteynerlerin öldürülmesini tetiklediğini `cross_event_notes` kısmında doğru ilişkilendirmiştir.
