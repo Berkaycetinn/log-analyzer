@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# AI service runtime artefacts
+runs/
+smoke-result.json
+smoke-small-result.json
+work/

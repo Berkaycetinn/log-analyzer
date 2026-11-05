@@ -2,6 +2,8 @@
 
 # 🔍 Log Analiz ve Kök Neden Asistanı
 
+FastAPI AI işlem servisi ve Colab dışı çalıştırma/test adımları: [Servis dokümantasyonu](docs/SERVICE.md).
+
 **Binlerce log satırını elle okuma. Hata gruplarını gör, kök nedeni öğren.**
 
 Uygulama loglarını kümeleyip her küme için LLM ile olası kök neden ve çözüm önerisi üreten analiz aracı.
@@ -136,3 +138,4 @@ log-analyzer/
 ## 📄 Lisans
 
 [MIT](LICENSE)
+

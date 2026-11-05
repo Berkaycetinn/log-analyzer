@@ -1,3 +1,7 @@
+# Uygulama durumu
+
+FastAPI servisi artık `ai_service/` altında uygulanmıştır. Çalıştırma, yapılandırma ve sınırlar için [docs/SERVICE.md](docs/SERVICE.md) dosyasına bakın. Parsing, kümeleme ve olay oluşturma kaynakları `processing.py` içinde; model kaynakları ve sıralı çağrılar `pipeline.py` içinde birleştirilmiştir. Aşağıdaki metin ilk tasarım planını kaydeder; önerilen bütün ayrı dosya adları birebir oluşturulmamıştır.
+
 # Mimari ve Entegrasyon Planı
 
 Temel: Berkaycetinn/log-analyzer, commit `98956406ddaf7fd0f45837d17b3026b52d38ac64`.
@@ -152,3 +156,4 @@ Karşılaştırma kontrolleri: 2.000 satır → 99 template, 1.121 önemli satı
 Boş dosya, tümü eşleşmeyen giriş, önemli satırsız giriş, tek template, bozuk JSON, eksik/tekrar event_id, yanlış alıntı zamanı, 200 karakterden uzun alıntı ve null önerileri ayrıca kapsa. Gün değişimi ve farklı log biçimleri mevcut davranışın sınırlarıdır; genel destek ayrı değişiklik gerektirir. LLM sonuçları örneklemeli olduğundan tam metin eşitliği beklenmez.
 
 Bu planın uygulanması ve benchmark'lar henüz yapılmadı; bu commit yalnız analiz ve mimari belgelerini ekler.
+
