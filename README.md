@@ -110,7 +110,7 @@ flowchart LR
 | Log parsing | ✅ Tamamlandı |
 | Embedding | ✅ Tamamlandı |
 | Kümeleme | ✅ Tamamlandı |
-| LLM ile kök neden analizi | ⬜ |
+| LLM ile kök neden analizi | ✅ Tamamlandı (Qwen3-14B) |
 | Arayüz | ⬜ |
 | Değerlendirme | ⬜ |
 | Dokümantasyon ve yayın | ⬜ |
