@@ -39,7 +39,7 @@ jobs:
         run: |
           docker compose config --quiet
           docker compose up -d --build --wait --wait-timeout 300
-          curl --fail --retry 60 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/actuator/health
+          curl --fail --retry 60 --retry-all-errors --retry-max-time 120 --connect-timeout 3 --max-time 5 --retry-delay 2 http://127.0.0.1:8080/actuator/health
       - name: Real browser upload and inference, including saved JSON download
         working-directory: frontend
         run: npm run test:e2e
@@ -48,7 +48,7 @@ jobs:
           export PGPASSWORD="$POSTGRES_PASSWORD"
           python3 scripts/verify_persistence.py --receipt "$E2E_RECEIPT" --database log_analyzer_e2e_test --pg-user log_analyzer --pg-port 55432
           docker compose restart backend
-          curl --fail --retry 60 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/actuator/health
+          curl --fail --retry 60 --retry-all-errors --retry-max-time 120 --connect-timeout 3 --max-time 5 --retry-delay 2 http://127.0.0.1:8080/actuator/health
           python3 scripts/verify_persistence.py --receipt "$E2E_RECEIPT" --database log_analyzer_e2e_test --pg-user log_analyzer --pg-port 55432
           node frontend/scripts/verify-restart.mjs
           job_id=$(python3 -c 'import json,os; print(json.load(open(os.environ["E2E_RECEIPT"]))["job_id"])')
@@ -60,3 +60,4 @@ jobs:
       - name: Remove disposable containers and volumes
         if: always()
         run: docker compose down --volumes --remove-orphans
+
