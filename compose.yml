@@ -52,6 +52,15 @@ services:
       ai:
         condition: service_healthy
     restart: unless-stopped
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
 volumes:
   postgres-data:
   model-cache:

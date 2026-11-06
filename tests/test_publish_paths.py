@@ -9,6 +9,10 @@ from scripts.check_publish_paths import prohibited
     "backend/target/backend.jar", ".m2/cache.xml", "models/config.json",
     "hf-cache/token", "work/pg/data", "nested\\uploads\\data.txt",
     "../outside.txt", "/absolute/file", "ai-runs/report.json",
+    "frontend/node_modules/react/index.js", "frontend/dist/index.html",
+    "frontend/.vite/cache.json", "frontend/coverage/index.html",
+    "frontend/playwright-report/index.html", "frontend/test-results/trace.zip",
+    "frontend/npm-cache/_logs/debug.txt", "frontend/tsconfig.app.tsbuildinfo",
 ])
 def test_forbidden_publish_path(path):
     assert prohibited(path)

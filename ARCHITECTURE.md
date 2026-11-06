@@ -157,5 +157,25 @@ Karşılaştırma kontrolleri: 2.000 satır → 99 template, 1.121 önemli satı
 
 Boş dosya, tümü eşleşmeyen giriş, önemli satırsız giriş, tek template, bozuk JSON, eksik/tekrar event_id, yanlış alıntı zamanı, 200 karakterden uzun alıntı ve null önerileri ayrıca kapsa. Gün değişimi ve farklı log biçimleri mevcut davranışın sınırlarıdır; genel destek ayrı değişiklik gerektirir. LLM sonuçları örneklemeli olduğundan tam metin eşitliği beklenmez.
 
-Bu planın uygulanması ve benchmark'lar henüz yapılmadı; bu commit yalnız analiz ve mimari belgelerini ekler.
+Yukarıdaki bölümler ilk analizdeki planı kaydeder. Uygulanan FastAPI servisi için
+[SERVICE.md](docs/SERVICE.md), kalıcı Spring Boot iş yönetimi için
+[BACKEND.md](docs/BACKEND.md), React TypeScript uygulaması ve endpoint eşlemesi için
+[FRONTEND.md](docs/FRONTEND.md) esas alınır. Orijinal notebook algoritmaları korunur;
+performans ve kök neden doğruluğuna ilişkin araştırma hedefleri ayrıca ölçülmelidir.
+
+## Uygulanan frontend sınırı
+
+Tarayıcı → React TypeScript → aynı origin üzerinden Spring Boot `/api/v1/analyses`
+→ PostgreSQL/Flyway kalıcı iş kuyruğu → Python FastAPI → mevcut parsing,
+embedding, HDBSCAN, olay paketleme ve Qwen modülleri. Tarayıcı doğrudan Python'a
+erişmez. Vite geliştirme proxy'si ve Nginx üretim proxy'si aynı API sözleşmesini
+korur. İş metadata'sı ve denemeler aktifken sorgulanır; sonuç ve olaylar yalnız
+tamamlanan işler için alınır. Tüm işlem durumları ve veriler backend'de saklanır.
+
+Arayüz duruma göre filtrelenen/sayfalanan analiz geçmişini, dosya yüklemeyi,
+iptal/yeniden deneme/silmeyi, rapor özetini, olay kanıtlarını, kaynak şablonları,
+bağlamı, model güven gerekçesini ve JSON indirmeyi kapsar. `-1` gürültü etiketleri
+ve null hipotezler korunur. Alıntı kontrolü uyarıları belirgin gösterilir;
+nedensellik doğrulanmış kabul edilmez. Onaylanan slate/teal geliştirici aracı
+tasarımı [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) içinde belgelenmiştir.
 

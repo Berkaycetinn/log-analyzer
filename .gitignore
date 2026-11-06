@@ -243,3 +243,12 @@ postgres-data/
 ai-runs/
 *.class
 *.war
+
+# Frontend dependencies and generated verification files
+node_modules/
+.vite/
+coverage/
+playwright-report/
+test-results/
+npm-cache/
+*.tsbuildinfo

@@ -6,6 +6,8 @@ FastAPI AI işlem servisi ve Colab dışı çalıştırma/test adımları: [Serv
 
 Spring Boot, PostgreSQL, Flyway ve asenkron iş yönetimi: [Backend dokümantasyonu](docs/BACKEND.md).
 
+React TypeScript arayüzü, gerçek API bağlantıları ve çalıştırma: [Frontend dokümantasyonu](docs/FRONTEND.md).
+
 **Binlerce log satırını elle okuma. Hata gruplarını gör, kök nedeni öğren.**
 
 Uygulama loglarını kümeleyip her küme için LLM ile olası kök neden ve çözüm önerisi üreten analiz aracı.
@@ -116,7 +118,7 @@ flowchart LR
 | Kümeleme | ✅ Tamamlandı |
 | LLM ile kök neden analizi | ✅ Tamamlandı (Qwen3-14B) |
 | Spring Boot backend, PostgreSQL ve Flyway | ✅ Tamamlandı |
-| Arayüz | ⬜ |
+| React TypeScript arayüzü | ✅ Tamamlandı |
 | Değerlendirme | ⬜ |
 | Dokümantasyon ve yayın | ⬜ |
 
@@ -127,9 +129,10 @@ flowchart LR
 ```
 log-analyzer/
 ├── backend/         # Spring Boot API, PostgreSQL, Flyway ve kalıcı iş kuyruğu
+├── frontend/        # React TypeScript analiz, olay ve kanıt inceleme arayüzü
 ├── ai_service/      # Mevcut parsing, embedding, kümeleme ve Qwen analizi
 ├── api.py           # FastAPI giriş noktası
-├── compose.yml      # Backend, AI servisi ve PostgreSQL
+├── compose.yml      # Frontend, backend, AI servisi ve PostgreSQL
 ├── docs/            # Mimari, çalıştırma ve test sonuçları
 ├── scripts/         # Gerçek pipeline smoke testleri
 ├── tests/           # Python testleri; Java testleri backend/src/test altında

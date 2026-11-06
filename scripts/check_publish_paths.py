@@ -7,7 +7,8 @@ import subprocess
 FORBIDDEN_DIRECTORIES = {
     "runs", "uploads", "outputs", "__pycache__", ".venv", "venv",
     "models", "hf-cache", "model-cache", "postgres-data", "ai-runs",
-    "target", ".m2", "work", ".git",
+    "target", ".m2", "work", ".git", "node_modules", "dist", ".vite",
+    "coverage", "playwright-report", "test-results", "npm-cache",
 }
 
 def prohibited(path: str) -> bool:
@@ -20,7 +21,7 @@ def prohibited(path: str) -> bool:
     if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
         return True
     return name == "pytorch_model.bin" or name.endswith(
-        (".safetensors", ".onnx", ".log", ".class", ".war")
+        (".safetensors", ".onnx", ".log", ".class", ".war", ".tsbuildinfo")
     )
 
 def main():
