@@ -96,6 +96,32 @@ events, evidence and attempts cascade and that the isolated database has no test
 jobs left. Screenshots, receipts, traces, logs, model caches and reports are
 runtime artifacts and must remain outside tracked source paths.
 
+## Production Docker verification
+
+The `Complete Docker pipeline verification` GitHub Actions workflow builds the
+actual frontend/Nginx, Spring Boot and FastAPI images and starts PostgreSQL using
+`compose.yml` plus `compose.e2e.yml`. The overlay selects a synthetic-only
+`log_analyzer_e2e_test` database and exposes its client port on loopback 55432 for
+direct SQL inspection. The CI project, volumes and randomly generated password
+are disposable. Ports 5173, 8080 and 55432 must be free when reproducing locally.
+
+```sh
+docker compose -p pipeline-verification -f compose.yml -f compose.e2e.yml up -d --build --wait --wait-timeout 300
+```
+
+Provide `POSTGRES_PASSWORD` through an ignored local `.env` or shell environment.
+Run the browser and persistence commands above with database
+`log_analyzer_e2e_test`, PostgreSQL user `log_analyzer` and port 55432. On an
+unrestricted machine, leave `E2E_IN_MEMORY_DOWNLOAD` unset so the browser must save
+the JSON file and the test must read and compare its contents. The workflow
+performs that strict check, restarts the real backend container, repeats SQL
+verification, checks production rendering and removes the synthetic job.
+
+After restarting a container, its process can be running before HTTP is ready.
+The verification readiness request uses bounded retries for connection resets,
+refused connections and non-success health responses. It does not treat container
+startup alone as proof that Spring Boot or the database is ready.
+
 ## Verified environment and limits
 
 Native verification uses PostgreSQL 18.6, Java 21, the packaged Spring Boot JAR,
@@ -135,5 +161,29 @@ does not claim to validate the Nginx container or container image builds.
   after cleanup. Original processing algorithms and production application code
   were preserved; this follow-up adds verification coverage and repeatable tools.
 
-Docker image execution and saving a browser download to the OS remain unverified
-in this sandbox. They are not reported as application successes.
+Those local sandbox limits were subsequently covered on an unrestricted Linux
+runner with the actual Docker production stack, as recorded below.
+
+## Final production Docker result
+
+The [complete Docker workflow](https://github.com/Berkaycetinn/log-analyzer/actions/runs/42281175628)
+passed on source commit `f3548353c162ced95938327b0e8a262532632ea2`.
+
+- The actual Nginx/frontend, Spring Boot and FastAPI images built and started with
+  PostgreSQL 17.11. Model inference used real all-mpnet-base-v2 and Qwen3-0.6B CPU.
+- All seven browser scenarios passed in about two minutes, including a fresh
+  upload, real inference and reading the completed JSON download from disk. The
+  sandbox in-memory export option was not enabled.
+- Direct PostgreSQL comparisons passed before and after restarting the backend:
+  unchanged input/report hashes, one event, three evidence rows, one successful
+  attempt and a successful Flyway migration. Quote validation passed.
+- A fresh Chromium context rendered the stored report and evidence from the
+  production bundle through Nginx after the container restarted.
+- The test deleted the retained job, checked that zero jobs remained, and removed
+  the disposable containers, database, reports and model-cache volumes.
+
+The first container run uncovered a readiness-check race: `curl --retry-connrefused`
+did not retry a connection reset immediately after restart. The verification now
+uses bounded `--retry-all-errors` polling. The successful rerun observed two such
+resets, waited until health returned `UP`, and completed persistence/rendering
+checks. No parsing, clustering or LLM algorithm changes were necessary.

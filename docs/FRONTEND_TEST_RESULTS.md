@@ -65,8 +65,19 @@ Qwen3-14B. Model output is sampled, so tests check contracts and displayed data,
 not a fixed summary. Cold CPU inference needs several minutes; the live browser
 scenario allows up to 15 minutes for the job to reach a terminal state.
 
-Container image build/run and Nginx runtime verification were not performed:
-this sandbox cannot access the Docker Desktop engine. Native four-service
-integration was used instead. CI runs frontend type checking, unit/interaction
-tests, production bundling and publish-path verification; it does not download
-and simulate a model for the browser pipeline test.
+The initial frontend verification used native services because this desktop
+sandbox cannot access Docker Desktop. The follow-up adds a separate complete
+Docker workflow for actual image builds, Nginx, real inference, strict JSON file
+download, SQL persistence and backend restart verification. It downloads and uses
+the real model rather than simulating inference. The faster frontend CI workflow
+continues to run types, unit/interaction tests, bundling, browser-test collection,
+verification-script syntax and the publish-path guard. Detailed follow-up results
+are recorded in [END_TO_END_VERIFICATION.md](END_TO_END_VERIFICATION.md).
+
+The [final Docker run](https://github.com/Berkaycetinn/log-analyzer/actions/runs/42281175628)
+passed actual image builds, all seven strict browser scenarios, saved JSON
+download validation, direct SQL checks before/after backend restart, production
+rendering through Nginx and disposable-data cleanup. The local sandbox's engine
+and download restrictions therefore do not leave those application paths
+unverified. The restart verification's transient-connection readiness race was
+fixed and validated in that run.
