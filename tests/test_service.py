@@ -8,6 +8,15 @@ from ai_service.pipeline import Pipeline
 from ai_service.processing import parse_logs, build_package
 from ai_service.validation import validate_report
 
+
+def test_hdbscan_finds_two_separated_dense_groups():
+    from ai_service.processing import cluster_templates
+    vectors = np.array([[0.0, 0.0], [0.0, 0.01], [10.0, 10.0], [10.0, 10.01]], dtype=np.float32)
+    labels = cluster_templates(vectors)
+    assert labels[0] == labels[1] >= 0
+    assert labels[2] == labels[3] >= 0
+    assert labels[0] != labels[2]
+
 def line(t="00:00:00,000", level="ERROR", message="Connection timeout"):
     return f"2026-01-01 {t} {level} [main] example.Worker: {message}\n"
 

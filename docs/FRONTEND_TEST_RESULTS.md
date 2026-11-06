@@ -51,6 +51,14 @@ process logs and database files remain outside the published source tree.
 
 ## Scope and limits
 
+A subsequent complete-stack verification reran component checks and extended the
+browser coverage to seven scenarios, compiled production assets, direct SQL
+comparisons and rendering after backend restart. That run also identified the
+sandbox's browser-download filesystem restriction; the export payload was checked
+in memory while the default test retains strict saved-file verification. See
+[END_TO_END_VERIFICATION.md](END_TO_END_VERIFICATION.md) for exact results,
+reproduction commands and remaining environment limits.
+
 The source change preserves the existing Python algorithms and Java backend.
 The smaller Qwen model verifies integration, not diagnostic equivalence to
 Qwen3-14B. Model output is sampled, so tests check contracts and displayed data,

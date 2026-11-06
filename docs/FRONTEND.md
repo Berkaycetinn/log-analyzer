@@ -105,3 +105,6 @@ the model-equipped integration environment; it is not simulated in CI.
 
 See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) and
 [FRONTEND_TEST_RESULTS.md](FRONTEND_TEST_RESULTS.md).
+
+For production-bundle browser verification, direct SQL checks and backend restart
+persistence, see [END_TO_END_VERIFICATION.md](END_TO_END_VERIFICATION.md).

@@ -1,15 +1,16 @@
 name: Frontend verification
 on:
   push:
-    paths: ["frontend/**", ".github/workflows/frontend.yml", "scripts/check_publish_paths.py", ".gitignore", "compose.yml"]
+    paths: ["frontend/**", ".github/workflows/frontend.yml", "scripts/check_publish_paths.py", "scripts/verify_persistence.py", ".gitignore", "compose.yml"]
   pull_request:
-    paths: ["frontend/**", ".github/workflows/frontend.yml", "scripts/check_publish_paths.py", ".gitignore", "compose.yml"]
+    paths: ["frontend/**", ".github/workflows/frontend.yml", "scripts/check_publish_paths.py", "scripts/verify_persistence.py", ".gitignore", "compose.yml"]
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_publish_paths.py
+      - run: python3 -m py_compile scripts/verify_persistence.py
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -17,5 +18,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: frontend
-      - run: npm run typecheck && npm test && npm run build
+      - run: |
+          npm run typecheck
+          npm test
+          npm run build
+          npm run test:e2e -- --list
+          node --check scripts/verify-restart.mjs
         working-directory: frontend

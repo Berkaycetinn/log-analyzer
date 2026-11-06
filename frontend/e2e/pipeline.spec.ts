@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, item]) => [key, canonical(item)]));
+  return value;
+}
 const sample = [
   '2020-01-01 00:00:00,000 ERROR [main] example.Network: Connection failed: java.net.NoRouteToHostException: No route to host 127.0.0.1:9000',
   '2020-01-01 00:00:01,000 WARN [main] example.Lease: Failed to renew lease for 30 seconds. Will retry shortly',
@@ -18,14 +25,28 @@ test('real upload → durable job → inference → events, evidence, JSON, hist
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/analyses');
   await expect(page.getByRole('heading', { name: 'Analizler', exact: true })).toBeVisible();
+  const sent = page.waitForRequest(req => req.method() === 'POST' && new URL(req.url()).pathname === '/api/v1/analyses');
   const id = await upload(page, 'synthetic-browser.log', sample);
+  const key = await (await sent).headerValue('idempotency-key'); expect(key).toBeTruthy();
+  const replay = await request.post('/api/v1/analyses', { headers: { 'Idempotency-Key': key! }, multipart: { file: { name: 'synthetic-browser.log', mimeType: 'text/plain', buffer: Buffer.from(sample) } } });
+  expect(replay.status()).toBe(202); expect((await replay.json()).id).toBe(id);
   await expect.poll(async () => (await (await request.get('/api/v1/analyses/' + id)).json()).status, { timeout: 900_000, intervals: [1000, 2000] }).toMatch(/^(COMPLETED|COMPLETED_WITH_WARNINGS|FAILED|CANCELLED)$/);
   expect((await (await request.get('/api/v1/analyses/' + id)).json()).status).toMatch(/^COMPLETED/);
   await expect(page.getByRole('heading', { name: /Tespit edilen olaylar/ })).toBeVisible();
   await page.reload();
   const result = await (await request.get('/api/v1/analyses/' + id + '/result')).json();
-  expect(result.stats.matched_lines).toBe(4);
+  expect(result.stats).toMatchObject({ matched_lines: 4, unmatched_lines: 0, templates: 3, important_lines: 4, noise_templates: 3, clusters: 0 });
+  expect(result.package.events).toHaveLength(1);
+  expect(result.package.events[0].n_rows).toBe(4);
+  expect(result.package.events[0].templates.every((template: { embedding_cluster: number }) => template.embedding_cluster === -1)).toBe(true);
   const event = result.report.events[0]; expect(event).toBeTruthy();
+  const storedEvents = await (await request.get('/api/v1/analyses/' + id + '/events')).json();
+  expect(storedEvents.totalElements).toBe(1);
+  expect(storedEvents.content[0].source).toEqual(result.package.events[0]);
+  expect(storedEvents.content[0].analysis).toEqual(event);
+  const metadata = await (await request.get('/api/v1/analyses/' + id)).json();
+  expect(metadata.sha256).toBe(createHash('sha256').update(sample).digest('hex'));
+  expect(metadata.attemptCount).toBe(1);
   await page.locator('.event-card').first().click();
   await expect(page.getByRole('heading', { name: 'Kaynak kanıtlar' })).toBeVisible();
   await expect(page.locator('.evidence pre').first()).toHaveText(event.evidence[0].quote);
@@ -42,16 +63,42 @@ test('real upload → durable job → inference → events, evidence, JSON, hist
   await page.getByRole('button', { name: 'Denemeler', exact: true }).click();
   await expect(page.getByText(/^SUCCEEDED(?:_WITH_WARNINGS)?$/)).toBeVisible();
   await page.getByRole('button', { name: 'JSON', exact: true }).click();
+  if (process.env.E2E_IN_MEMORY_DOWNLOAD === '1') {
+    // Some restricted desktop sandboxes deny every browser download destination.
+    // Verify the actual export Blob there; keep strict file verification by default.
+    await page.evaluate(() => {
+      const create = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = value => {
+        if (value instanceof Blob) void value.text().then(text => { document.documentElement.dataset.exportPayload = text; });
+        return create(value);
+      };
+    });
+  }
   const downloaded = page.waitForEvent('download'); await page.getByRole('button', { name: 'JSON indir' }).click();
-  expect((await downloaded).suggestedFilename()).toBe('analysis-' + id + '.json');
+  const download = await downloaded;
+  expect(download.suggestedFilename()).toBe('analysis-' + id + '.json');
+  if (process.env.E2E_IN_MEMORY_DOWNLOAD === '1') {
+    await page.waitForFunction(() => document.documentElement.dataset.exportPayload !== undefined);
+    expect(JSON.parse((await page.evaluate(() => document.documentElement.dataset.exportPayload))!)).toEqual(result);
+    test.info().annotations.push({ type: 'environment', description: 'Sandbox denies OS download writes; export Blob contents verified in-browser.' });
+  } else expect(JSON.parse(await readFile((await download.path())!, 'utf8'))).toEqual(result);
+  await writeFile(process.env.E2E_RECEIPT ?? test.info().outputPath('pipeline-summary.json'), JSON.stringify({
+    job_id: id, run_id: result.run_id, input_sha256: metadata.sha256,
+    result_sha256: createHash('sha256').update(JSON.stringify(canonical(result))).digest('hex'),
+    stats: result.stats, event_count: result.package.events.length,
+    evidence_count: result.report.events.reduce((count: number, item: { evidence: unknown[] }) => count + item.evidence.length, 0),
+    validation_valid: result.validation.valid,
+  }, null, 2));
   await page.goto('/analyses'); await page.screenshot({ path: process.env.VISUAL_OUTPUT ? process.env.VISUAL_OUTPUT + '/analyses-desktop.png' : 'test-results/analyses-desktop.png', fullPage: true });
   await page.getByLabel('Duruma göre filtrele').selectOption('COMPLETED');
   await expect(page).toHaveURL(/status=COMPLETED/);
-  await page.goto('/analyses/' + id);
-  await page.getByRole('button', { name: 'Sil', exact: true }).click();
-  await page.getByRole('button', { name: 'Analizi sil', exact: true }).click();
-  await expect(page).toHaveURL(/\/analyses$/);
-  expect((await request.get('/api/v1/analyses/' + id)).status()).toBe(404);
+  if (process.env.E2E_KEEP_JOB !== '1') {
+    await page.goto('/analyses/' + id);
+    await page.getByRole('button', { name: 'Sil', exact: true }).click();
+    await page.getByRole('button', { name: 'Analizi sil', exact: true }).click();
+    await expect(page).toHaveURL(/\/analyses$/);
+    expect((await request.get('/api/v1/analyses/' + id)).status()).toBe(404);
+  }
   expect(errors).toEqual([]);
 });
 test('failed input exposes real attempt errors and supports retry', async ({ page, request }) => {
@@ -64,6 +111,17 @@ test('failed input exposes real attempt errors and supports retry', async ({ pag
   await expect.poll(async () => (await (await request.get('/api/v1/analyses/' + id)).json()).status).toBe('FAILED');
   await page.getByRole('button', { name: 'Denemeler', exact: true }).click();
   await expect(page.locator('.attempt-list > li')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Sil', exact: true }).click(); await page.getByRole('button', { name: 'Analizi sil', exact: true }).click();
+  await expect(page).toHaveURL(/\/analyses$/);
+});
+test('normal-only input completes and renders an empty event report', async ({ page, request }) => {
+  await page.goto('/analyses');
+  const id = await upload(page, 'synthetic-normal.log', '2020-01-01 00:00:00,000 INFO [main] example.Worker: Synthetic startup\n');
+  await expect.poll(async () => (await (await request.get('/api/v1/analyses/' + id)).json()).status, { timeout: 60_000 }).toBe('COMPLETED');
+  await expect(page.getByRole('heading', { name: 'Olay tespit edilmedi' })).toBeVisible();
+  const result = await (await request.get('/api/v1/analyses/' + id + '/result')).json();
+  expect(result.stats.important_lines).toBe(0); expect(result.report.events).toEqual([]);
+  expect(result.validation.valid).toBe(true);
   await page.getByRole('button', { name: 'Sil', exact: true }).click(); await page.getByRole('button', { name: 'Analizi sil', exact: true }).click();
   await expect(page).toHaveURL(/\/analyses$/);
 });
@@ -115,3 +173,4 @@ test('network failure remains an error rather than an empty success', async ({ p
   await expect(page.getByRole('alert').first()).toContainText('Sunucuya ulaşılamadı');
   await expect(page.getByText('İlk analizinize başlayın', { exact: true })).not.toBeVisible();
 });
+
