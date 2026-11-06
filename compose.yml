@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: log_analyzer
+      POSTGRES_USER: log_analyzer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U log_analyzer -d log_analyzer"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+  ai:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    environment:
+      LOG_AI_LLM_MODEL: ${LLM_MODEL:-Qwen/Qwen3-0.6B}
+      LOG_AI_DEVICE: cpu
+      LOG_AI_LLM_DTYPE: float32
+      LOG_AI_ENFORCE_JSON: "true"
+      LOG_AI_THINKING: "false"
+      LOG_AI_MAX_UPLOAD_BYTES: "10000000"
+      HF_HOME: /models/cache
+    volumes:
+      - model-cache:/models/cache
+      - ai-runs:/app/runs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 10
+    restart: unless-stopped
+  backend:
+    build:
+      context: backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/log_analyzer
+      DB_USERNAME: log_analyzer
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env}
+      AI_SERVICE_URL: http://ai:8000
+      JOB_PARALLELISM: "1"
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  postgres-data:
+  model-cache:
+  ai-runs:
+

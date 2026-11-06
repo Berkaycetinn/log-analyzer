@@ -1,0 +1,47 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+spring:
+  application:
+    name: log-analyzer-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/log_analyzer}
+    username: ${DB_USERNAME:log_analyzer}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_UPLOAD_BYTES:10000000}B
+      max-request-size: 12MB
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  jackson:
+    default-property-inclusion: non_null
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+analyzer:
+  max-upload-bytes: ${MAX_UPLOAD_BYTES:10000000}
+  max-pending-jobs: ${MAX_PENDING_JOBS:100}
+  ai-url: ${AI_SERVICE_URL:http://localhost:8000}
+  connect-timeout: ${AI_CONNECT_TIMEOUT:5s}
+  read-timeout: ${AI_READ_TIMEOUT:30m}
+  poll-delay: ${JOB_POLL_DELAY:1s}
+  heartbeat-delay: ${JOB_HEARTBEAT_DELAY:15s}
+  lease-duration: ${JOB_LEASE_DURATION:90s}
+  retry-delay: ${JOB_RETRY_DELAY:30s}
+  max-attempts: ${JOB_MAX_ATTEMPTS:3}
+  parallelism: ${JOB_PARALLELISM:1}
+  worker-enabled: ${JOB_WORKER_ENABLED:true}
+

@@ -4,6 +4,8 @@
 
 FastAPI AI işlem servisi ve Colab dışı çalıştırma/test adımları: [Servis dokümantasyonu](docs/SERVICE.md).
 
+Spring Boot, PostgreSQL, Flyway ve asenkron iş yönetimi: [Backend dokümantasyonu](docs/BACKEND.md).
+
 **Binlerce log satırını elle okuma. Hata gruplarını gör, kök nedeni öğren.**
 
 Uygulama loglarını kümeleyip her küme için LLM ile olası kök neden ve çözüm önerisi üreten analiz aracı.
@@ -12,7 +14,7 @@ Uygulama loglarını kümeleyip her küme için LLM ile olası kök neden ve ç�
 ![Drain3](https://img.shields.io/badge/Parsing-Drain3-orange)
 ![Embedding](https://img.shields.io/badge/Embedding-sentence--transformers-blueviolet)
 ![HDBSCAN](https://img.shields.io/badge/Clustering-HDBSCAN-green)
-![Claude](https://img.shields.io/badge/LLM-Claude%20API-D97757)
+![Qwen](https://img.shields.io/badge/LLM-Qwen3-D97757)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Status](https://img.shields.io/badge/Durum-Geliştirme%20aşamasında-yellow)
 
@@ -48,7 +50,7 @@ flowchart LR
     B --> C[🔢 Embedding<br/>sentence-transformers]
     C --> D[🗂️ Kümeleme<br/>HDBSCAN]
     D --> G[⏱️ Olay grupları<br/>zaman penceresi]
-    G --> E[🤖 LLM analizi<br/>Claude API]
+    G --> E[🤖 LLM analizi<br/>Qwen3]
     E --> F[📊 Rapor]
 ```
 
@@ -113,23 +115,25 @@ flowchart LR
 | Embedding | ✅ Tamamlandı |
 | Kümeleme | ✅ Tamamlandı |
 | LLM ile kök neden analizi | ✅ Tamamlandı (Qwen3-14B) |
+| Spring Boot backend, PostgreSQL ve Flyway | ✅ Tamamlandı |
 | Arayüz | ⬜ |
 | Değerlendirme | ⬜ |
 | Dokümantasyon ve yayın | ⬜ |
 
 ---
 
-## 📁 Planlanan proje yapısı
+## 📁 Proje yapısı
 
 ```
 log-analyzer/
-├── parser.py        # Drain3 ile şablon çıkarma
-├── embedder.py      # Vektör üretimi
-├── clusterer.py     # HDBSCAN kümeleme
-├── analyzer.py      # LLM çağrıları
-├── api.py           # FastAPI
-├── app.py           # Streamlit arayüz
-├── tests/
+├── backend/         # Spring Boot API, PostgreSQL, Flyway ve kalıcı iş kuyruğu
+├── ai_service/      # Mevcut parsing, embedding, kümeleme ve Qwen analizi
+├── api.py           # FastAPI giriş noktası
+├── compose.yml      # Backend, AI servisi ve PostgreSQL
+├── docs/            # Mimari, çalıştırma ve test sonuçları
+├── scripts/         # Gerçek pipeline smoke testleri
+├── tests/           # Python testleri; Java testleri backend/src/test altında
+├── *.ipynb          # Orijinal araştırma notebook'ları
 └── README.md
 ```
 

@@ -1,0 +1,11 @@
+target
+.env
+.env.*
+.m2
+**/*.log
+**/*.safetensors
+**/pytorch_model.bin
+**/*.onnx
+uploads
+outputs
+runs

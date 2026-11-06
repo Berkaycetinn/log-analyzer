@@ -1,5 +1,7 @@
 # Uygulama durumu
 
+Spring Boot uygulama backend'i `backend/` altında uygulanmıştır. Dosyalar ve işler PostgreSQL'e atomik olarak kaydedilir; arka plan worker'ları lease/heartbeat ve sahiplik token'larıyla FastAPI'yi çağırır. Sonuçlar, olaylar, kanıtlar ve deneme geçmişi kalıcıdır. API sözleşmesi, durum geçişleri ve çalıştırma adımları: [docs/BACKEND.md](docs/BACKEND.md). Java tarafı parsing veya kümeleme algoritmalarını yeniden uygulamaz.
+
 FastAPI servisi artık `ai_service/` altında uygulanmıştır. Çalıştırma, yapılandırma ve sınırlar için [docs/SERVICE.md](docs/SERVICE.md) dosyasına bakın. Parsing, kümeleme ve olay oluşturma kaynakları `processing.py` içinde; model kaynakları ve sıralı çağrılar `pipeline.py` içinde birleştirilmiştir. Aşağıdaki metin ilk tasarım planını kaydeder; önerilen bütün ayrı dosya adları birebir oluşturulmamıştır.
 
 # Mimari ve Entegrasyon Planı

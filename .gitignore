@@ -225,3 +225,21 @@ runs/
 smoke-result.json
 smoke-small-result.json
 work/
+
+# Never commit secrets, model weights, user uploads, or analysis artifacts
+.env
+.env.*
+!.env.example
+*.safetensors
+pytorch_model.bin
+*.onnx
+uploads/
+outputs/
+models/
+hf-cache/
+.m2/
+model-cache/
+postgres-data/
+ai-runs/
+*.class
+*.war
