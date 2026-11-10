@@ -36,6 +36,7 @@ başarılı rapor taklidi yerine açık hata verir.
 float16 Qwen3-1.7B, dört sentetik log satırı, 3 şablon, 1 olay. Model hazırlığı
 28,36 saniye; modeller hazırken iki gerçek pipeline çağrısı 20,27 ve 19,66 saniye.
 Her iki çağrı 387 çıktı tokenıyla ilk denemede Türkçe doğrulamasını geçti.
+Aynı örneğin Linux Docker CI CPU koşusunda LLM üretimi 206,15 saniye sürdü.
 Bu süreler belirli örnek içindir; genel bir süre garantisi değildir.
 
 Parsing, Drain3, embedding normalizasyonu, HDBSCAN ve olay paketleme algoritmaları
@@ -43,10 +44,11 @@ değiştirilmedi. Kalıcı sonuçtaki `performance` alanı toplam, model bekleme
 sürelerini içerir; arayüzün işleme özetinde gösterilir. Alıntı eşleşmesi veya dil
 kontrolü, modelin kök neden çıkarımının doğru olduğunu kanıtlamaz.
 
-Yerel testler: 75 Python, 17 Java birim, 15 frontend birim testi ve üretim frontend
+Yerel testler: 76 Python, 17 Java birim, 15 frontend birim testi ve üretim frontend
 paketi derlemesi geçti. Gerçek PostgreSQL/Flyway + Spring + GPU FastAPI + tarayıcı
 akışında 7 test; SQL hash/olay/kanıt kontrolleri ve backend yeniden başlatıldıktan
 sonra kalıcılık/üretim arayüzü kontrol edildi. Windows tarayıcı indirmesi test
 ortamında engellendiğinden JSON indirme bu yerel koşuda gerçek Blob baytlarıyla
 doğrulandı. Yerel Docker motor erişimi ayrıca doğrulanmalıdır; yerel native GPU
 testi, Docker GPU profilinin çalıştığı anlamına gelmez.
+

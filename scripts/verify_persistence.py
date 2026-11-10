@@ -12,6 +12,20 @@ import urllib.request
 import uuid
 
 
+def canonical_json(value):
+    # JSON.stringify writes integral floating-point values (including 0.0) as integers.
+    # Performance measurements use finite seconds rounded to three decimal places.
+    def numbers(item):
+        if isinstance(item, dict):
+            return {key: numbers(value) for key, value in item.items()}
+        if isinstance(item, list):
+            return [numbers(value) for value in item]
+        if isinstance(item, float) and item.is_integer():
+            return int(item)
+        return item
+    return json.dumps(numbers(value), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+
+
 def verify(args):
     if not args.database.endswith("_test"):
         raise ValueError("Verification requires a synthetic-only database ending in _test")
@@ -29,7 +43,7 @@ def verify(args):
     assert metadata["status"] in ("COMPLETED", "COMPLETED_WITH_WARNINGS")
     assert result["run_id"] == receipt["run_id"]
     # Match JavaScript's stable key order and compact UTF-8 serialization.
-    serialized = json.dumps(result, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    serialized = canonical_json(result)
     assert hashlib.sha256(serialized.encode("utf-8")).hexdigest() == receipt["result_sha256"]
     events = get("/events?size=100")["content"]
     attempts = get("/attempts")
