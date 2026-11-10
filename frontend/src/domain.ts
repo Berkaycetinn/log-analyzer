@@ -57,6 +57,7 @@ export type AnalysisEvent = z.infer<typeof eventSchema>;
 export const eventsPageSchema = pageSchema(eventSchema);
 
 export const resultSchema = z.object({
+  performance: z.object({ total_seconds: z.number(), model_wait_seconds: z.number(), llm_seconds: z.number(), language_attempts: z.number() }).passthrough().optional(),
   run_id: z.string(),
   stats: z.object({
     matched_lines: z.number(), unmatched_lines: z.number(), templates: z.number(),
@@ -78,6 +79,8 @@ export const attemptsSchema = z.array(z.object({
 }));
 export type Attempt = z.infer<typeof attemptsSchema>[number];
 export const healthSchema = z.object({ status: z.string() }).passthrough();
+export const aiStatusSchema = z.object({ available: z.boolean(), modelsLoaded: z.boolean(),
+  modelState: z.enum(['ready', 'loading', 'unloaded', 'error', 'unknown', 'unavailable']), device: z.string() });
 
 export const number = (value: number) => new Intl.NumberFormat('tr-TR').format(value);
 export function bytes(value: number) {

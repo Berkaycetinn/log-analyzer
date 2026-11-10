@@ -27,9 +27,9 @@ class Embedder:
 class Analyzer:
     def analyze_package(self, payload, **kwargs):
         package = json.loads(payload)
-        return {"events": [dict(event_id=e["event_id"], summary="Test response",
+        return {"events": [dict(event_id=e["event_id"], summary="Bağlantı hatası kaydedildi.",
                     severity="low", likely_root_cause=None, confidence="low",
-                    confidence_reason="Injected test analyzer", evidence=[],
+                    confidence_reason="Kaynak bilgiler sınırlı.", evidence=[],
                     assumptions=[], alternative_explanations=[], unknowns=[],
                     recommended_checks=[], recommended_fix=None) for e in package["events"]],
                 "cross_event_notes": ""}

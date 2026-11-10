@@ -38,6 +38,14 @@ public class FastApiClient {
             return response;
         } catch (RestClientResponseException error) {
             int status = error.getStatusCode().value();
+            if (status == 422) {
+                JsonNode problem = null;
+                try { problem = error.getResponseBodyAs(JsonNode.class); }
+                catch (RuntimeException unreadable) { /* Use the normal bounded HTTP error below. */ }
+                if (problem != null && "REPORT_LANGUAGE_INVALID".equals(problem.path("detail").path("code").asText())) {
+                    throw new AiFailure("AI_REPORT_LANGUAGE_INVALID", "Model Türkçe rapor üretemedi. AI model ayarlarını kontrol edin.", false, status);
+                }
+            }
             boolean retryable = status == 429 || status >= 500;
             throw new AiFailure("AI_HTTP_" + status,
                 "AI service returned HTTP " + status, retryable, status);

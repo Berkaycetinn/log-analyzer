@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { jobSchema, jobsPageSchema, resultSchema, eventsPageSchema, eventSchema, attemptsSchema, healthSchema } from './domain';
+import { jobSchema, jobsPageSchema, resultSchema, eventsPageSchema, eventSchema, attemptsSchema, healthSchema, aiStatusSchema } from './domain';
 import type { JobStatus } from './domain';
 
 export class ApiError extends Error {
@@ -52,6 +52,7 @@ async function request<T>(path: string, schema: z.ZodType<T> | undefined, option
 const base = '/api/v1/analyses';
 const path = (id: string) => base + '/' + encodeURIComponent(id);
 export const api = {
+  aiStatus: (signal?: AbortSignal) => request('/api/v1/system/ai', aiStatusSchema, { signal, timeoutMs: 5000 }),
   list: (page = 0, size = 20, status?: JobStatus, signal?: AbortSignal) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
     if (status) params.set('status', status);
@@ -76,6 +77,7 @@ export const api = {
 export function errorText(error: unknown) {
   if (!(error instanceof ApiError)) return 'Beklenmeyen bir hata oluştu. Lütfen yeniden deneyin.';
   const messages: Record<string, string> = {
+    AI_REPORT_LANGUAGE_INVALID: 'Model Türkçe rapor üretemedi. AI model ayarlarını kontrol edin.',
     EMPTY_UPLOAD: 'Lütfen boş olmayan bir dosya seçin.',
     INVALID_ENCODING: 'Dosya UTF-8 olarak kodlanmış olmalı.',
     UPLOAD_TOO_LARGE: 'Dosya sunucunun yükleme sınırını aşıyor.',

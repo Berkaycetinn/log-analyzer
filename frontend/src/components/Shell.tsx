@@ -4,6 +4,7 @@ import { Activity, ArrowUpRight, Layers3, ListChecks, Plus, Server } from 'lucid
 import { useHealth } from '../queries';
 import { Button } from './ui';
 import { UploadModal } from './UploadModal';
+import { AiReadiness } from './AiReadiness';
 
 export function Shell() {
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -26,7 +27,7 @@ export function Shell() {
     <div className="app-content">
       <header className="topbar"><div><span className="topbar-eyebrow">LOG ANALYZER</span><span className="topbar-title">Analiz çalışma alanı</span></div>
         <Button onClick={() => setUploadOpen(true)}><Plus size={17} aria-hidden="true" />Yeni analiz</Button></header>
-      <main id="main-content" tabIndex={-1}><Outlet context={{ openUpload: () => setUploadOpen(true) }} /></main>
+      <main id="main-content" tabIndex={-1}><AiReadiness /><Outlet context={{ openUpload: () => setUploadOpen(true) }} /></main>
       <footer className="app-footer"><span>Log Analyzer</span><span>Olası nedenleri, kaynak kanıtlarla birlikte değerlendirin.</span></footer>
     </div>
     {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} />}

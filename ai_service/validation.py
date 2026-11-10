@@ -23,5 +23,5 @@ def validate_report(result, package):
             if not any(item.quote in text for text in texts):
                 errors.append(f"Event {event.event_id}: evidence is not an exact input substring")
     return report.model_dump(), {"valid": not errors, "errors": errors,
-                                 "note": "Quote matching does not establish causality."}
+                                 "note": "Alıntı eşleşmesi nedenselliği kanıtlamaz."}
 

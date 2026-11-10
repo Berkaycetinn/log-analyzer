@@ -3,7 +3,9 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 HF_HOME=/models/cache \
     LOG_AI_OUTPUT_DIR=/app/runs OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
 COPY requirements.txt .
-RUN pip install --no-cache-dir "torch>=2.6,<3" --index-url https://download.pytorch.org/whl/cpu \
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+ARG TORCH_PACKAGE="torch>=2.6,<3"
+RUN pip install --no-cache-dir "$TORCH_PACKAGE" --index-url "$TORCH_INDEX_URL" \
     && pip install --no-cache-dir -r requirements.txt
 COPY ai_service ./ai_service
 COPY api.py .

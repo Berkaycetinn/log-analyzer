@@ -8,6 +8,8 @@ Spring Boot, PostgreSQL, Flyway ve asenkron iş yönetimi: [Backend dokümantasy
 
 React TypeScript arayüzü, gerçek API bağlantıları ve çalıştırma: [Frontend dokümantasyonu](docs/FRONTEND.md).
 
+Türkçe raporlar, GPU ile çalıştırma ve ölçülen süreler: [Türkçe/GPU rehberi](docs/TURKISH_GPU.md).
+
 **Binlerce log satırını elle okuma. Hata gruplarını gör, kök nedeni öğren.**
 
 Uygulama loglarını kümeleyip her küme için LLM ile olası kök neden ve çözüm önerisi üreten analiz aracı.

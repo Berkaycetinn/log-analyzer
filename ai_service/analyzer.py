@@ -2,96 +2,68 @@ import json
 import re
 import torch
 
-SYSTEM = """You are an SRE assistant that analyzes pre-processed application logs.
-You receive a JSON package: log events (time-windowed groups of flagged log lines), each with templates,
-counts, time ranges, raw example lines, ranges of masked values, and surrounding context.
-The log comes from a single process (an application master), so lines from other components are NOT visible.
+SYSTEM = """Uygulama loglarını inceleyen bir SRE asistanısın. Yalnız verilen olay paketindeki bilgileri kullan.
+BÜTÜN açıklamaları TÜRKÇE yaz: summary, likely_root_cause, confidence_reason, assumptions,
+alternative_explanations, unknowns, recommended_checks, recommended_fix ve cross_event_notes.
+İngilizce JSON anahtarlarını ve enum değerlerini değiştirme. Kanıt alıntılarını (evidence.quote)
+kaynak metinden AYNEN kopyala; çevirme, düzeltme veya yeni alıntı üretme. Alıntı en fazla 200 karakter.
+Her event_id tam bir kez bulunmalı. Özet ve gerekçeler birer kısa Türkçe cümle olsun.
+En fazla 3 kanıt, 2 kontrol, 2 bilinmeyen, 1 varsayım ve 1 alternatif açıklama seç; gereksiz tekrar yapma.
+Kaynak dışı bilgi varsayımdır. Nedensellik kanıtlanmıyorsa likely_root_cause null ve güven düşük olmalı.
+severity etkiyi (none/low/medium/high), confidence güveni (low/medium/high) belirtir; log seviyesini kopyalama.
+Örnek sample_end anında kesilir; olayın çözüldüğünü veya toplam süresini varsayma.
+Önerilen çözüm bilinmiyorsa recommended_fix null olabilir. Yalnız geçerli JSON döndür, markdown yazma."""
 
-Rules:
-1. Use ONLY the data in the package. Anything that depends on outside knowledge (what a port number usually means,
-   how a framework typically behaves) must be listed under "assumptions", never stated as fact.
-2. "evidence" quotes must be EXACT substrings copied from the package, at most 200 characters each. Never paraphrase inside a quote.
-3. Confidence: "high" only if the log itself states the cause. "medium" if several consistent pieces of evidence
-   point to one explanation but other explanations remain possible. "low" otherwise.
-4. Severity describes the impact on the running job (none, low, medium, high), NOT the log level of the lines.
-5. The sample is cut at "sample_end". Never state or imply that a problem ended, was resolved, or lasted a certain
-   total duration beyond what the data shows.
-6. If the data cannot answer something, say so under "unknowns". Do not fill gaps with guesses.
-7. Write all explanations in Turkish. Keep quotes verbatim in their original language. Output ONLY valid JSON, no markdown.
+SYSTEM += """\nTürkçe üslup örnekleri: 'Kayıtlarda hata görülüyor.', 'Kesin neden bu örnekten belirlenemiyor.',
+'Bağlantı ayarlarını kontrol edin.' Bunlar yalnız dil örneğidir; analizi gerçek olaylara göre yaz.
+İngilizce açıklama yazma. Her şablonu ayrı olay sayma; yalnız paketteki event_id değerlerini kullan."""
 
-Schema:
-{
-  "events": [
-    {
-      "event_id": <int>,
-      "summary": "<1-2 sentences>",
-      "severity": "none|low|medium|high",
-      "likely_root_cause": "<hypothesis, or null if the data does not support one>",
-      "confidence": "low|medium|high",
-      "confidence_reason": "<why this level>",
-      "evidence": [{"time": "<HH:MM:SS.mmm>", "quote": "<exact substring>"}],
-      "assumptions": ["<anything not directly in the data>"],
-      "alternative_explanations": ["..."],
-      "unknowns": ["..."],
-      "recommended_checks": ["<what a human should look at next>"],
-      "recommended_fix": "<string or null>"
-    }
-  ],
-  "cross_event_notes": "<relations between events, only if the data supports them>"
-}"""
-
-
-# ==========================================
-# YENİ HÜCRE: Kök Neden Analiz Modülü & Pipeline Entegrasyonu
-# ==========================================
-
-import json
-import re
 
 class QwenLocalAnalyzer:
-    def __init__(self, model, tok, system_prompt, json_schema=None):
-        self.model = model
-        self.tok = tok
-        self.system_prompt = system_prompt
-        self.json_schema = json_schema
+    def __init__(self, model, tok, system_prompt=SYSTEM, json_schema=None):
+        self.model, self.tok = model, tok
+        self.system_prompt, self.json_schema = system_prompt, json_schema
+        self._tokenizer_data = None
+        self.last_metrics = {}
+        self.last_raw_output = None
 
-    def analyze_package(self, payload_str: str, thinking: bool = True, max_new_tokens: int = 12000):
-        """
-        Log paketini (JSON payload) alıp Qwen3-14B ile analiz eder.
-        Düşünce zincirini (<think>) temizleyerek sadece doğrulanmış JSON döndürür.
-        """
-        user_content = "Analyze every event in the following package.\n\n" + payload_str
-        msgs = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": user_content}
-        ]
+    def prepare_decoder(self):
+        if self.json_schema is not None and self._tokenizer_data is None:
+            from lmformatenforcer.integrations.transformers import build_token_enforcer_tokenizer_data
+            self._tokenizer_data = build_token_enforcer_tokenizer_data(self.tok)
 
-        text = self.tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True, enable_thinking=thinking)
+    def messages(self, payload_str, language_retry=False):
+        instruction = "Her olayı kısa TÜRKÇE cümlelerle değerlendir. JSON anahtarlarını ve kaynak alıntıları koru."
+        if language_retry:
+            instruction += " Önceki yanıtta Türkçe olmayan açıklamalar vardı. Bu kez tüm açıklamalar kesinlikle Türkçe olmalı."
+        return [{"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": instruction + "\n" + payload_str}]
+
+    def analyze_package(self, payload_str, thinking=False, max_new_tokens=1200, language_retry=False):
+        from time import perf_counter
+        started = perf_counter()
+        self.last_raw_output = None
+        text = self.tok.apply_chat_template(self.messages(payload_str, language_retry), tokenize=False,
+                                            add_generation_prompt=True, enable_thinking=thinking)
         inputs = self.tok(text, return_tensors="pt").to(self.model.device)
-
-        params = dict(temperature=0.6, top_p=0.95, top_k=20) if thinking else dict(temperature=0.7, top_p=0.8, top_k=20)
+        params = dict(do_sample=True, temperature=0.6, top_p=0.95, top_k=20) if thinking else dict(
+            do_sample=False, temperature=1.0, top_p=1.0, top_k=50)
         if self.json_schema is not None:
             if thinking:
                 raise ValueError("JSON schema decoding requires thinking=False")
-            from lmformatenforcer import JsonSchemaParser
-            from lmformatenforcer.integrations.transformers import build_transformers_prefix_allowed_tokens_fn
-            params["prefix_allowed_tokens_fn"] = build_transformers_prefix_allowed_tokens_fn(
-                self.tok, JsonSchemaParser(self.json_schema))
-
-        with torch.no_grad():
-            out = self.model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=True, **params)
-
+            from .decoding import prefix_function
+            self.prepare_decoder()
+            params["prefix_allowed_tokens_fn"] = prefix_function(self._tokenizer_data, self.json_schema, payload_str)
+        with torch.inference_mode():
+            out = self.model.generate(**inputs, max_new_tokens=max_new_tokens, use_cache=True, **params)
         gen = out[0][inputs["input_ids"].shape[1]:]
-        raw_output = self.tok.decode(gen, skip_special_tokens=True).strip()
-
-        # </think> etiketini ayıkla
-        body = raw_output.split("</think>")[-1] if "</think>" in raw_output else raw_output
-
-        # JSON objesini cımbızla (regex)
-        m = re.search(r'\{\s*"events"', body)
-        body = body[m.start(): body.rfind("}") + 1] if m else body[body.find("{"): body.rfind("}") + 1]
-
-        parsed_json = json.loads(body)
-        return parsed_json
-
-
+        self.last_metrics = {"input_tokens": int(inputs["input_ids"].shape[1]),
+                             "output_tokens": len(gen), "seconds": round(perf_counter() - started, 3)}
+        raw = self.tok.decode(gen, skip_special_tokens=True).strip().split("</think>")[-1]
+        self.last_raw_output = raw
+        match = re.search(r'\{\s*"events"', raw)
+        body = raw[match.start():raw.rfind("}") + 1] if match else raw[raw.find("{"):raw.rfind("}") + 1]
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError as error:
+            raise ValueError("Model geçerli ve tam bir JSON raporu üretemedi; çıktı token sınırını kontrol edin.") from error

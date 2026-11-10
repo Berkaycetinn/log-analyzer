@@ -55,6 +55,10 @@ export function useAttempts(job?: Job) {
 export function useHealth() {
   return useQuery({ queryKey: ['health'], queryFn: ({ signal }) => api.health(signal), refetchInterval: 30_000, retry: false });
 }
+export function useAiStatus() {
+  return useQuery({ queryKey: ['ai-status'], queryFn: ({ signal }) => api.aiStatus(signal), retry: false,
+    refetchInterval: query => query.state.data?.modelsLoaded ? 30_000 : 3000 });
+}
 export function useJobAction(id: string) {
   const client = useQueryClient();
   return useMutation({

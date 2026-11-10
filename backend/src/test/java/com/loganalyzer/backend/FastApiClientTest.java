@@ -48,6 +48,20 @@ class FastApiClientTest {
         assertThatThrownBy(() -> client.analyze(new byte[]{1},"x.log")).isInstanceOf(AiFailure.class)
             .satisfies(error -> assertThat(((AiFailure)error).retryable()).isFalse());
     }
+    @Test void languageFailureIsSpecificAndNotRetried() {
+        server.createContext("/analyze", exchange -> {
+            byte[] body="{\"detail\":{\"code\":\"REPORT_LANGUAGE_INVALID\",\"message\":\"private upstream text\"}}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type","application/json");
+            exchange.sendResponseHeaders(422,body.length);
+            exchange.getResponseBody().write(body); exchange.close();
+        });
+        assertThatThrownBy(() -> new FastApiClient(TestFixtures.properties(base,1000)).analyze(new byte[]{1},"x"))
+            .isInstanceOfSatisfying(AiFailure.class, error -> {
+                assertThat(error.code()).isEqualTo("AI_REPORT_LANGUAGE_INVALID");
+                assertThat(error.retryable()).isFalse();
+                assertThat(error.getMessage()).doesNotContain("private upstream text");
+            });
+    }
     @Test void rejectsNonJsonResponse() {
         server.createContext("/analyze",exchange -> {
             byte[] body="not JSON".getBytes();

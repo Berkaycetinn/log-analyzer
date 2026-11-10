@@ -35,6 +35,9 @@ test('real upload → durable job → inference → events, evidence, JSON, hist
   await expect(page.getByRole('heading', { name: /Tespit edilen olaylar/ })).toBeVisible();
   await page.reload();
   const result = await (await request.get('/api/v1/analyses/' + id + '/result')).json();
+  expect(result.validation.language).toBe('tr');
+  expect(result.performance.generation.output_tokens).toBeLessThanOrEqual(1200);
+  console.log(JSON.stringify({ ai_seconds: result.performance.total_seconds, model_wait_seconds: result.performance.model_wait_seconds, llm_seconds: result.performance.llm_seconds, output_tokens: result.performance.generation.output_tokens, language_attempts: result.performance.language_attempts }));
   expect(result.stats).toMatchObject({ matched_lines: 4, unmatched_lines: 0, templates: 3, important_lines: 4, noise_templates: 3, clusters: 0 });
   expect(result.package.events).toHaveLength(1);
   expect(result.package.events[0].n_rows).toBe(4);
