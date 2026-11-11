@@ -17,6 +17,8 @@ def prefix_function(tokenizer_data, schema, payload):
     ids = [event["event_id"] for event in json.loads(payload)["events"]]
     schema["properties"]["events"].update(minItems=len(ids), maxItems=len(ids))
     schema["$defs"]["EventAnalysis"]["properties"]["event_id"]["enum"] = ids
+    if len(ids) <= 1:
+        schema['properties']['cross_event_notes']['enum'] = ['']
     function = build_transformers_prefix_allowed_tokens_fn(tokenizer_data, json_parser(schema, payload))
     # TokenEnforcer replaces parser.config with the tokenizer's full Unicode alphabet.
     # Apply ordering afterwards, preserving that alphabet and its free-text token cache.

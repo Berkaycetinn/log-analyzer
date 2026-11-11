@@ -45,6 +45,9 @@ public class FastApiClient {
                 if (problem != null && "REPORT_LANGUAGE_INVALID".equals(problem.path("detail").path("code").asText())) {
                     throw new AiFailure("AI_REPORT_LANGUAGE_INVALID", "Model Türkçe rapor üretemedi. AI model ayarlarını kontrol edin.", false, status);
                 }
+                if (problem != null && "REPORT_PLAN_INVALID".equals(problem.path("detail").path("code").asText())) {
+                    throw new AiFailure("AI_REPORT_PLAN_INVALID", "Model uygulanabilir ve doğrulanabilir bir müdahale planı üretemedi. Analizi yeniden deneyin.", false, status);
+                }
             }
             boolean retryable = status == 429 || status >= 500;
             throw new AiFailure("AI_HTTP_" + status,

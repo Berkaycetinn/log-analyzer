@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     thinking: bool = False
     enforce_json: bool = True
     max_new_tokens: int = Field(default=4096, ge=1)
-    tokens_per_event: int = Field(default=1200, ge=256)
+    tokens_per_event: int = Field(default=1800, ge=256)
     preload_models: bool = False
     language_retries: int = Field(default=1, ge=0, le=1)
     context_tokens: int = Field(default=32768, ge=1024)

@@ -6,6 +6,7 @@ from starlette.concurrency import run_in_threadpool
 from .config import Settings
 from .pipeline import Pipeline
 from .language import ReportLanguageError
+from .validation import ReportPlanError
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,9 @@ def create_app(settings=None, pipeline=None):
         except ReportLanguageError as error:
             raise HTTPException(422, detail={"code": "REPORT_LANGUAGE_INVALID",
                 "message": "Model Türkçe rapor üretemedi. AI model ayarlarını kontrol edin."}) from error
+        except ReportPlanError as error:
+            raise HTTPException(422, detail={"code": "REPORT_PLAN_INVALID",
+                "message": "Model uygulanabilir ve doğrulanabilir bir müdahale planı üretemedi. Analizi yeniden deneyin."}) from error
         except (UnicodeError, ValueError) as error:
             raise HTTPException(422, str(error)) from error
         except Exception as error:

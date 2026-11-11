@@ -25,7 +25,7 @@ services:
       LOG_AI_THINKING: "false"
       LOG_AI_PRELOAD_MODELS: "true"
       LOG_AI_MAX_NEW_TOKENS: "4096"
-      LOG_AI_TOKENS_PER_EVENT: "1200"
+      LOG_AI_TOKENS_PER_EVENT: "1800"
       LOG_AI_MAX_UPLOAD_BYTES: "10000000"
       HF_HOME: /models/cache
     volumes:

@@ -1,4 +1,25 @@
 from .schemas import Report
+import re
+
+class ReportPlanError(ValueError):
+    pass
+
+def require_actionable(report):
+    for event in report['events']:
+        for field in ('likely_root_cause', 'recommended_fix', 'resolution_check'):
+            if not isinstance(event.get(field), str) or not event[field].strip():
+                raise ReportPlanError(f"Model müdahale planını tamamlamadı: events[{event['event_id']}].{field}")
+    # Recommendations are not an executed repair. Do not accept an unqualified
+    # completion claim in prose (source evidence remains verbatim and excluded).
+    prose = [report.get('cross_event_notes', '')]
+    for event in report['events']:
+        prose.extend(event.get(field) or '' for field in
+                     ('summary', 'likely_root_cause', 'confidence_reason', 'recommended_fix', 'resolution_check'))
+        for field in ('assumptions', 'alternative_explanations', 'unknowns', 'recommended_checks'):
+            prose.extend(event.get(field, []))
+    if any(re.search(r'\b(?:hata|sorun)\s+(?:tamamen\s+)?(?:giderildi|çözüldü|çözülmüştür|giderilmiştir)\b',
+                     text, re.IGNORECASE) for text in prose):
+        raise ReportPlanError('Model, öneriyi uygulanmış ve doğrulanmış bir onarım gibi sundu.')
 
 def strings(value):
     if isinstance(value, str):

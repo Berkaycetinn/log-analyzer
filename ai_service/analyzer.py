@@ -9,14 +9,23 @@ alternative_explanations, unknowns, recommended_checks, recommended_fix ve cross
 kaynak metinden AYNEN kopyala; çevirme, düzeltme veya yeni alıntı üretme. Alıntı en fazla 200 karakter.
 Her event_id tam bir kez bulunmalı. Özet ve gerekçeler birer kısa Türkçe cümle olsun.
 En fazla 3 kanıt, 2 kontrol, 2 bilinmeyen, 1 varsayım ve 1 alternatif açıklama seç; gereksiz tekrar yapma.
-Kaynak dışı bilgi varsayımdır. Nedensellik kanıtlanmıyorsa likely_root_cause null ve güven düşük olmalı.
+likely_root_cause kesinleşmiş neden değil, kanıtla desteklenen EN OLASI açıklamadır. Belirsizlik güveni düşürür;
+belirsizliği gerekçe gösterip olası nedeni ve çözümü boş bırakma. Hiç ipucu yoksa nedenin belirlenemediğini açıkla.
+diagnostic_hints varsa yalnız eşleşen hata için bu teknik bilgiden yararlan; bunlar giderilme kanıtı değildir.
+recommended_fix somut bir müdahale planı olmalı: hangi kullanıcı/servis, hangi kaynak, hangi ayar değişmeli?
+2-3 sıralı adımı tek metin içinde yaz. Yalnız 'kontrol edin' demek çözüm değildir. Doğrulanmamış kullanıcı,
+işletim sistemi, komut veya yapılandırma değeri uydurma. chmod 777, herkese yetki veya korumaları kapatma önerme.
+resolution_check alanında yeniden çalıştırma ve beklenen başarılı sonucu belirt. 'Bu neden doğrulanırsa bu
+adımlarla hata giderilmelidir' gibi koşullu konuş; yeni başarılı log olmadan 'hata giderildi' deme.
+Özet gerçek işlemi anlatmalı: dosya okuma hatasını kullanıcı girişi hatası olarak sunma.
 severity etkiyi (none/low/medium/high), confidence güveni (low/medium/high) belirtir; log seviyesini kopyalama.
 Örnek sample_end anında kesilir; olayın çözüldüğünü veya toplam süresini varsayma.
-Önerilen çözüm bilinmiyorsa recommended_fix null olabilir. Yalnız geçerli JSON döndür, markdown yazma."""
+Kesin çözüm bilinmiyorsa güvenli bir sonraki müdahaleyi ve gerekli ek bilgiyi yaz. Yalnız geçerli JSON döndür."""
 
 SYSTEM += """\nTürkçe üslup örnekleri: 'Kayıtlarda hata görülüyor.', 'Kesin neden bu örnekten belirlenemiyor.',
 'Bağlantı ayarlarını kontrol edin.' Bunlar yalnız dil örneğidir; analizi gerçek olaylara göre yaz.
-İngilizce açıklama yazma. Her şablonu ayrı olay sayma; yalnız paketteki event_id değerlerini kullan."""
+İngilizce açıklama yazma. resolution_check dahil tüm açıklamalar Türkçe olmalı.
+Her şablonu ayrı olay sayma; yalnız paketteki event_id değerlerini kullan."""
 
 
 class QwenLocalAnalyzer:
@@ -35,7 +44,7 @@ class QwenLocalAnalyzer:
     def messages(self, payload_str, language_retry=False):
         instruction = "Her olayı kısa TÜRKÇE cümlelerle değerlendir. JSON anahtarlarını ve kaynak alıntıları koru."
         if language_retry:
-            instruction += " Önceki yanıtta Türkçe olmayan açıklamalar vardı. Bu kez tüm açıklamalar kesinlikle Türkçe olmalı."
+            instruction += " Önceki yanıt rapor kontrollerinden geçmedi. Tüm açıklamaları Türkçe yaz; olası neden, müdahale ve doğrulama adımları boş kalmasın. Onarım yapılmış gibi 'hata giderildi' deme."
         return [{"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": instruction + "\n" + payload_str}]
 

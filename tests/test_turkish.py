@@ -60,7 +60,7 @@ def test_turkish_prose_with_english_evidence_and_enums_is_preserved():
     assert json.dumps(value) == original
 
 
-@pytest.mark.parametrize("field", ["summary", "likely_root_cause", "confidence_reason", "recommended_fix"])
+@pytest.mark.parametrize("field", ["summary", "likely_root_cause", "confidence_reason", "recommended_fix", "resolution_check"])
 def test_every_explanatory_string_is_checked(field):
     value = report()
     value["events"][0][field] = "A connection failed and the network cannot be reached."
@@ -106,7 +106,7 @@ def test_one_bounded_language_retry_keeps_real_source_and_turkish_report(tmp_pat
     result = Pipeline(Settings(output_dir=tmp_path), Embedder(), analyzer).run(line().encode())
     assert len(analyzer.calls) == 2
     assert analyzer.calls[1]["language_retry"]
-    assert analyzer.calls[0]["max_new_tokens"] == 1200
+    assert analyzer.calls[0]["max_new_tokens"] == 1800
     assert result["performance"]["language_attempts"] == 2
     assert result["validation"]["language"] == "tr"
     assert result["stats"]["matched_lines"] == 1

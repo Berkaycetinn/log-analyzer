@@ -32,6 +32,7 @@ export const analysisSchema = z.object({
   confidence_reason: z.string(), evidence: z.array(evidenceSchema), assumptions: z.array(z.string()),
   alternative_explanations: z.array(z.string()), unknowns: z.array(z.string()),
   recommended_checks: z.array(z.string()), recommended_fix: z.string().nullable(),
+  resolution_check: z.string().nullish(),
 }).passthrough();
 export type EventAnalysis = z.infer<typeof analysisSchema>;
 const fieldSchema = z.object({ unique: z.number(), example: z.array(z.string()), min: z.number().optional(), max: z.number().optional() });

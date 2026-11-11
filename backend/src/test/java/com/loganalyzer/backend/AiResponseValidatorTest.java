@@ -7,6 +7,14 @@ import static org.assertj.core.api.Assertions.*;
 class AiResponseValidatorTest {
     private final AiResponseValidator validator=new AiResponseValidator();
     @Test void acceptsActualFastApiContract() { validator.validate(TestFixtures.response()); }
+    @Test void acceptsResolutionCheckAndRejectsMalformedVerification() {
+        var value=TestFixtures.response();
+        var event=(ObjectNode)value.path("report").path("events").get(0);
+        event.put("resolution_check","İşi yeniden çalıştırın; hata tekrarlamamalıdır.");
+        assertThatCode(() -> validator.validate(value)).doesNotThrowAnyException();
+        event.put("resolution_check",true);
+        assertThatThrownBy(() -> validator.validate(value)).isInstanceOf(AiFailure.class);
+    }
     @Test void retainsUnverifiedResultsAsWarningsRatherThanInventingValidity() {
         var value=(ObjectNode)TestFixtures.response();
         ((ObjectNode)value.path("validation")).put("valid",false);

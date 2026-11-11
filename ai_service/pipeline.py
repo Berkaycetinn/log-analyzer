@@ -5,8 +5,9 @@ from threading import Lock, RLock
 from time import perf_counter
 from uuid import uuid4
 from .processing import parse_logs, cluster_templates, build_package
-from .validation import validate_report
+from .validation import validate_report, require_actionable, ReportPlanError
 from .language import require_turkish, ReportLanguageError
+from .diagnostics import diagnostic_hints
 
 def strip(value):
     if isinstance(value, dict):
@@ -103,7 +104,11 @@ class Pipeline:
                               "settings": self.settings.model_dump(mode="json"), "stats": stats})
         try:
             if package["events"]:
-                payload = json.dumps(strip(package), ensure_ascii=False, separators=(",", ":"))
+                model_input = strip(package)
+                hints = diagnostic_hints(package)
+                if hints:
+                    model_input['diagnostic_hints'] = hints
+                payload = json.dumps(model_input, ensure_ascii=False, separators=(",", ":"))
                 token_budget = min(self.settings.max_new_tokens,
                                    self.settings.tokens_per_event * len(package["events"]))
                 # The production analyzer has a real tokenizer; injected test doubles need not.
@@ -121,9 +126,10 @@ class Pipeline:
                     save("model_response.json" if language_attempt == 0 else "language_retry_response.json", result)
                     report, validation = validate_report(result, strip(package))
                     try:
+                        require_actionable(report)
                         require_turkish(report)
                         break
-                    except ReportLanguageError:
+                    except (ReportLanguageError, ReportPlanError):
                         if language_attempt >= self.settings.language_retries:
                             raise
                 llm_seconds = perf_counter() - llm_started

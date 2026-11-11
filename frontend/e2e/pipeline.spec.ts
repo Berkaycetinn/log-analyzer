@@ -36,7 +36,10 @@ test('real upload → durable job → inference → events, evidence, JSON, hist
   await page.reload();
   const result = await (await request.get('/api/v1/analyses/' + id + '/result')).json();
   expect(result.validation.language).toBe('tr');
-  expect(result.performance.generation.output_tokens).toBeLessThanOrEqual(1200);
+  expect(result.performance.generation.output_tokens).toBeLessThanOrEqual(1800);
+  expect(result.report.events[0].likely_root_cause).toBeTruthy();
+  expect(result.report.events[0].recommended_fix).toBeTruthy();
+  expect(result.report.events[0].resolution_check).toBeTruthy();
   console.log(JSON.stringify({ ai_seconds: result.performance.total_seconds, model_wait_seconds: result.performance.model_wait_seconds, llm_seconds: result.performance.llm_seconds, output_tokens: result.performance.generation.output_tokens, language_attempts: result.performance.language_attempts }));
   expect(result.stats).toMatchObject({ matched_lines: 4, unmatched_lines: 0, templates: 3, important_lines: 4, noise_templates: 3, clusters: 0 });
   expect(result.package.events).toHaveLength(1);
@@ -52,6 +55,8 @@ test('real upload → durable job → inference → events, evidence, JSON, hist
   expect(metadata.attemptCount).toBe(1);
   await page.locator('.event-card').first().click();
   await expect(page.getByRole('heading', { name: 'Kaynak kanıtlar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Çözümü doğrulama' })).toBeVisible();
+  await expect(page.getByText(event.resolution_check, { exact: true })).toBeVisible();
   await expect(page.locator('.evidence pre').first()).toHaveText(event.evidence[0].quote);
   await page.locator('.template-item summary').first().click();
   await expect(page.getByText('Kaynak örnek', { exact: true }).first()).toBeVisible();

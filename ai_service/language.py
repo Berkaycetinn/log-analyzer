@@ -3,7 +3,7 @@ from functools import lru_cache
 from unicodedata import name as unicode_name
 from lingua import Language, LanguageDetectorBuilder
 
-TEXT_FIELDS = ("summary", "likely_root_cause", "confidence_reason", "recommended_fix")
+TEXT_FIELDS = ("summary", "likely_root_cause", "confidence_reason", "recommended_fix", "resolution_check")
 LIST_FIELDS = ("assumptions", "alternative_explanations", "unknowns", "recommended_checks")
 
 
@@ -20,7 +20,7 @@ def non_turkish_fields(report):
     fields = []
     for event in report["events"]:
         prefix = f"events[{event['event_id']}]"
-        fields.extend((f"{prefix}.{name}", event[name]) for name in TEXT_FIELDS)
+        fields.extend((f"{prefix}.{name}", event.get(name)) for name in TEXT_FIELDS)
         for name in LIST_FIELDS:
             fields.extend((f"{prefix}.{name}[{index}]", text) for index, text in enumerate(event[name]))
     fields.append(("cross_event_notes", report["cross_event_notes"]))

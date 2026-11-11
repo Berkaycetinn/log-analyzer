@@ -28,10 +28,11 @@ class Analyzer:
     def analyze_package(self, payload, **kwargs):
         package = json.loads(payload)
         return {"events": [dict(event_id=e["event_id"], summary="Bağlantı hatası kaydedildi.",
-                    severity="low", likely_root_cause=None, confidence="low",
+                    severity="low", likely_root_cause="Bağlantı sorunu olabilir.", confidence="low",
                     confidence_reason="Kaynak bilgiler sınırlı.", evidence=[],
                     assumptions=[], alternative_explanations=[], unknowns=[],
-                    recommended_checks=[], recommended_fix=None) for e in package["events"]],
+                    recommended_checks=[], recommended_fix="Yanlış servis adresi doğrulanırsa adresi düzeltin.",
+                    resolution_check="İşi yeniden çalıştırın; bağlantı hatası tekrarlamamalıdır.") for e in package["events"]],
                 "cross_event_notes": ""}
 
 @pytest.fixture

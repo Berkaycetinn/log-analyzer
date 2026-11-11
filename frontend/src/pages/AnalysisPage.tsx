@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight, Clock3, Download, FileText, RefreshCw, Trash2,
 import { useAttempts, useEvents, useJob, useJobAction, useResult } from '../queries';
 import { bytes, date, elapsed, hasResult, isActive, number, validJobId } from '../domain';
 import type { AnalysisResult, Job } from '../domain';
+import { ReportLanguageNotice } from '../components/ReportLanguageNotice';
 import { errorText } from '../api';
 import { Button, Confidence, CopyButton, Empty, ErrorPanel, Loading, Modal, Pagination, Severity, StatusBadge, useToast } from '../components/ui';
 
@@ -75,6 +76,7 @@ export default function AnalysisPage() {
   {active && <div className="notice notice-processing" role="status"><Clock3 size={22} /><div><strong>{data.status === 'QUEUED' ? 'Analiz sırada bekliyor' : 'Loglar analiz ediliyor'}</strong><p>{data.status === 'QUEUED' ? 'Worker hazır olduğunda işlem başlayacak.' : 'Ayrıştırma, kümeleme ve LLM değerlendirmesi tamamlandığında sonuçlar burada görünecek.'} Durum otomatik güncellenir.</p>{data.nextAttemptAt && <small>Sonraki deneme: {date(data.nextAttemptAt)}</small>}</div></div>}
   {data.errorCode && <div className="notice notice-error"><strong>{data.errorCode}</strong><p>{data.errorMessage}</p>{data.upstreamStatus != null && <small>AI servisi HTTP {data.upstreamStatus}</small>}</div>}
   {data.status === 'CANCELLED' && <div className="notice"><strong>Bu analiz iptal edildi</strong><p>Varsa devam eden AI isteğinin sonucu kaydedilmez. Yeni bir deneme başlatabilirsiniz.</p></div>}
+  <ReportLanguageNotice result={result.data} />
   <ValidationNotice result={result.data} warning={data.status === 'COMPLETED_WITH_WARNINGS'} />
   <div className="detail-layout"><div className="detail-main"><nav className="tabs" aria-label="Analiz bölümleri">{([['events', 'Olaylar'], ['overview', 'Genel bakış'], ['attempts', 'Denemeler'], ['json', 'JSON']] as const).map(([key, label]) => <button key={key} aria-current={tab === key ? 'page' : undefined} className={tab === key ? 'active' : ''} onClick={() => { const next = new URLSearchParams(params); next.set('tab', key); setParams(next); }}>{label}</button>)}</nav>
     {tab === 'attempts' ? <Attempts job={data} /> : !ready ? <section className="panel"><Empty icon={<FileText size={30} />} title={active ? 'Sonuç bekleniyor' : 'Kayıtlı sonuç yok'}>{active ? 'İşleme tamamlandığında olaylar ve kanıtlar otomatik olarak yüklenecek.' : 'Bu durumdaki analiz için rapor bulunmuyor. Denemeler bölümünde işleme geçmişini inceleyebilirsiniz.'}</Empty></section> : tab === 'events' ? <Events job={data} /> : result.isPending ? <Loading label="Rapor alınıyor…" /> : result.isError ? <ErrorPanel error={result.error} retry={() => { void result.refetch(); }} /> : result.data && (tab === 'overview' ? <ResultOverview result={result.data} /> : <RawResult result={result.data} id={data.id} />)}

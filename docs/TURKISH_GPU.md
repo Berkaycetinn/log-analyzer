@@ -1,5 +1,19 @@
 # Türkçe analiz ve GPU ile çalıştırma
 
+Yeni üretimde `likely_root_cause` kanıta dayalı olası açıklamayı,
+`recommended_fix` uygulanabilir müdahale adımlarını ve `resolution_check` yeniden
+çalıştırmada beklenen sonucu içerir. Bu üç alanın boş olması yeni bir analizde
+başarı sayılmaz. Eski kayıtlardaki null alanlar geriye uyumlu okunur.
+Boş plan veya doğrulanmamış 'hata giderildi' iddiası `REPORT_PLAN_INVALID` olarak
+reddedilir. Dil ve plan denetimi aynı sınırlı yeniden üretim bütçesini paylaşır.
+
+Dosya erişimi, eksik dosya, ağ yolu, reddedilen bağlantı ve dolu disk hatalarında
+yalnız olayın kendi kaynak şablon örneğiyle eşleşen teknik ipuçları modele eklenir.
+İpuçları kaynak kanıt değildir; rapor metni yerine otomatik yazılmaz. Kanıt alıntısı
+kontrolü yalnız özgün olay paketine karşı yapılır. Parsing/kümeleme değişmez.
+Arayüz müdahaleyi ve çözümü doğrulama koşulunu ayrı gösterir. Servis öneriyi
+uygulamaz ve yeni bir başarılı çalışma görmeden hatanın giderildiğini iddia etmez.
+
 Yeni raporların açıklamaları Türkçe üretilir ve kaydedilmeden önce dil kontrolünden
 geçer. JSON anahtarları, enum değerleri ve kaynak kanıt alıntıları korunur. Dil
 kontrolü başarısızsa en fazla bir yeniden üretim yapılır; yine başarısızsa
@@ -26,7 +40,7 @@ docker compose -p log-analyzer -f compose.yml -f compose.gpu.yml up -d --build -
 Servis başlangıçta modelleri arka planda hazırlar. `GET /health` liveness bilgisinden
 ayrı olarak `model_state`, `models_loaded` ve `device` döndürür. Spring Boot
 `GET /api/v1/system/ai` bu bilgiyi kısa zaman aşımıyla arayüze aktarır.
-`LOG_AI_PRELOAD_MODELS`, `LOG_AI_TOKENS_PER_EVENT` (1200),
+`LOG_AI_PRELOAD_MODELS`, `LOG_AI_TOKENS_PER_EVENT` (1800),
 `LOG_AI_MAX_NEW_TOKENS` (4096) ve `LOG_AI_LANGUAGE_RETRIES` (1) ayarlanabilir.
 Kaynak olay sayısı/kimlikleri üretim şemasını sınırlar; kaynak log girdisi bu
 optimizasyon için kesilmez. Çok olaylı büyük paketler toplam çıktı sınırını aşarsa
@@ -44,8 +58,8 @@ değiştirilmedi. Kalıcı sonuçtaki `performance` alanı toplam, model bekleme
 sürelerini içerir; arayüzün işleme özetinde gösterilir. Alıntı eşleşmesi veya dil
 kontrolü, modelin kök neden çıkarımının doğru olduğunu kanıtlamaz.
 
-Yerel testler: 76 Python, 17 Java birim, 15 frontend birim testi ve üretim frontend
-paketi derlemesi geçti. Gerçek PostgreSQL/Flyway + Spring + GPU FastAPI + tarayıcı
+Son birim kontrolleri: 98 Python, 18 Java birim, 19 frontend birim testi ve üretim frontend
+paketi derlemesi geçti. İlk entegrasyon doğrulamasında gerçek PostgreSQL/Flyway + Spring + GPU FastAPI + tarayıcı
 akışında 7 test; SQL hash/olay/kanıt kontrolleri ve backend yeniden başlatıldıktan
 sonra kalıcılık/üretim arayüzü kontrol edildi. Windows tarayıcı indirmesi test
 ortamında engellendiğinden JSON indirme bu yerel koşuda gerçek Blob baytlarıyla

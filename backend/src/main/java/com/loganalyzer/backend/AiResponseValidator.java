@@ -37,6 +37,7 @@ public class AiResponseValidator {
                 require(Set.of("low", "medium", "high").contains(text(event, "confidence")));
                 text(event, "summary"); text(event, "confidence_reason");
                 nullableText(event, "likely_root_cause"); nullableText(event, "recommended_fix");
+                if (event.has("resolution_check")) nullableText(event, "resolution_check");
                 for (String name : new String[]{"assumptions", "alternative_explanations",
                         "unknowns", "recommended_checks"}) { strings(event.path(name)); }
                 for (JsonNode evidence : array(event.path("evidence"))) {

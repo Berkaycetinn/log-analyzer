@@ -20,6 +20,7 @@ class EventAnalysis(BaseModel):
     unknowns: list[str]
     recommended_checks: list[str]
     recommended_fix: str | None
+    resolution_check: str | None = None
 
 class Report(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -33,9 +34,11 @@ def brief_report_schema():
     fields = schema["$defs"]["EventAnalysis"]["properties"]
     for name in ("summary", "confidence_reason"):
         fields[name]["maxLength"] = 180
-    for name in ("likely_root_cause", "recommended_fix"):
-        for option in fields[name]["anyOf"]:
-            if option.get("type") == "string": option["maxLength"] = 180
+    # Keep legacy API nulls readable; new generation must provide a hypothesis,
+    # an intervention and a way to verify its outcome.
+    for name, maximum in (("likely_root_cause", 240), ("recommended_fix", 600), ("resolution_check", 240)):
+        fields[name] = {"type": "string", "minLength": 1, "maxLength": maximum}
+    schema["$defs"]["EventAnalysis"]["required"].append("resolution_check")
     for name, maximum in (("assumptions", 1), ("alternative_explanations", 1), ("unknowns", 2), ("recommended_checks", 2)):
         fields[name]["maxItems"] = maximum
         fields[name]["items"]["maxLength"] = 140

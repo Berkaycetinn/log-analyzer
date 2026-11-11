@@ -78,6 +78,7 @@ export function errorText(error: unknown) {
   if (!(error instanceof ApiError)) return 'Beklenmeyen bir hata oluştu. Lütfen yeniden deneyin.';
   const messages: Record<string, string> = {
     AI_REPORT_LANGUAGE_INVALID: 'Model Türkçe rapor üretemedi. AI model ayarlarını kontrol edin.',
+    AI_REPORT_PLAN_INVALID: 'Model uygulanabilir bir çözüm planı üretemedi. Analizi yeniden deneyin.',
     EMPTY_UPLOAD: 'Lütfen boş olmayan bir dosya seçin.',
     INVALID_ENCODING: 'Dosya UTF-8 olarak kodlanmış olmalı.',
     UPLOAD_TOO_LARGE: 'Dosya sunucunun yükleme sınırını aşıyor.',
